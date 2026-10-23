@@ -1,0 +1,28 @@
+name: Build NOIZZ IMAGER VST3
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Allows you to click "Run workflow" manually on GitHub
+
+jobs:
+  build-windows-vst3:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake & Fetch JUCE
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Compile VST3 & Standalone Plugin
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Upload Compiled VST3 Plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: NoizzImager-Windows-VST3
+          path: |
+            build/NoizzImager_artefacts/Release/VST3/NOIZZ IMAGER.vst3
+            build/NoizzImager_artefacts/Release/Standalone/NOIZZ IMAGER.exe
