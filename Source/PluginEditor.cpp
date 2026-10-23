@@ -34,9 +34,29 @@ void NoizzImagerAudioProcessorEditor::loadPreset(int id)
 }
 void NoizzImagerAudioProcessorEditor::saveUserPreset()
 {
-    auto dir=juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("NOIZZ STUDIO/NOIZZ IMAGER/Presets"); dir.createDirectory();
-    juce::FileChooser chooser("Save NOIZZ IMAGER preset",dir.getChildFile("My Preset.noizzpreset"),"*.noizzpreset");
-    if(chooser.browseForFileToSave(true)){ auto state=proc.parameters.copyState(); std::unique_ptr<juce::XmlElement> xml(state.createXml()); xml->writeTo(chooser.getResult()); }
+    auto dir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                   .getChildFile("NOIZZ STUDIO/NOIZZ IMAGER/Presets");
+    dir.createDirectory();
+
+    // JUCE 8 uses launchAsync; keep the chooser alive until its callback runs.
+    static std::unique_ptr<juce::FileChooser> chooser;
+    chooser = std::make_unique<juce::FileChooser>(
+        "Save NOIZZ IMAGER preset", dir.getChildFile("My Preset.noizzpreset"), "*.noizzpreset");
+
+    chooser->launchAsync(juce::FileBrowserComponent::saveMode |
+                             juce::FileBrowserComponent::canSelectFiles |
+                             juce::FileBrowserComponent::warnAboutOverwriting,
+                         [this](const juce::FileChooser& fc)
+                         {
+                             const auto file = fc.getResult();
+                             if (file == juce::File{})
+                                 return;
+
+                             auto state = proc.parameters.copyState();
+                             std::unique_ptr<juce::XmlElement> xml(state.createXml());
+                             if (xml != nullptr)
+                                 xml->writeTo(file);
+                         });
 }
 void NoizzImagerAudioProcessorEditor::paint(juce::Graphics& g)
 {
